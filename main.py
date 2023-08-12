@@ -2,6 +2,19 @@ import os
 import openai
 import streamlit as st
 from dotenv import load_dotenv, find_dotenv
+
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+def show_messages(text):
+    for message in st.session_state.messages:
+        if message["role"] == "system":
+            text.markdown(f"System: {message['content']}")
+        elif message["role"] == "user":
+            text.markdown(f"You: {message['content']}")
+        elif message["role"] == "assistant":
+            text.markdown(f"Assistant: {message['content']}")
+
 _ = load_dotenv(find_dotenv()) # read local .env file
 openai.api_key = os.getenv("OPENAI_API_KEY")
 response = openai.ChatCompletion.create(
@@ -32,16 +45,16 @@ prompt = st.text_input("Prompt", value="Enter your message here...")
 
 if st.button("Send"):
     with st.spinner("Generating response..."):
-        st.session_state["messages"] += [{"role": "user", "content": prompt}]
+        st.session_state.messages += [{"role": "user", "content": prompt}]
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo", messages=st.session_state["messages"]
+            model="gpt-3.5-turbo", messages=st.session_state.messages
         )
         message_response = response["choices"][0]["message"]["content"]
-        st.session_state["messages"] += [
+        st.session_state.messages += [
             {"role": "system", "content": message_response}
         ]
         show_messages(text)
 
 if st.button("Clear"):
-    st.session_state["messages"] = BASE_PROMPT
+    st.session_state.messages = []
     show_messages(text)
